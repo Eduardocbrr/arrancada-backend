@@ -11,13 +11,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Configurar o Mercado Pago
 mercadopago.configure({
   access_token: process.env.MP_ACCESS_TOKEN
 });
 
+// Armazenamento temporário de inscrições antes do pagamento
 let pilotosPendentes = {};
 
-// Rota para criar pagamento
+// ROTA PARA CRIAR PAGAMENTO
 app.post('/criar-pagamento', async (req, res) => {
   const { preparador, equipe, moto, categoria, evento } = req.body;
 
@@ -51,57 +53,57 @@ app.post('/criar-pagamento', async (req, res) => {
   }
 });
 
-// Webhook oficial do Mercado Pago
+// ROTA DE WEBHOOK PARA PROCESSAR PAGAMENTOS
 app.post('/webhook', async (req, res) => {
   try {
-    // lógica do webhook...
-    res.sendStatus(200);
-  } catch (e) {
-    console.error("Erro ao processar webhook:", e.message);
-    res.sendStatus(500);
-  }
-});
+    const idPagamento = req.body?.data?.id;
 
-    if (pagamento?.data?.id) {
-      const pagamentoDetalhes = await mercadopago.payment.findById(pagamento.data.id);
-      const info = pagamentoDetalhes.response;
+    if (!idPagamento) {
+      console.error("ID de pagamento não recebido.");
+      return res.sendStatus(400);
+    }
 
-      if (info.status === 'approved') {
-        const ref = info.external_reference;
-        const modoPagamento = info.payment_type_id;
-        const dadosPiloto = pilotosPendentes[ref];
+    const resultado = await mercadopago.payment.findById(idPagamento);
+    const info = resultado.response;
 
-        if (dadosPiloto) {
-          const novaInscricao = {
-            "Nome do Preparador": dadosPiloto.preparador,
-            "Equipe": dadosPiloto.equipe,
-            "Moto": dadosPiloto.moto,
-            "Categoria": dadosPiloto.categoria,
-            "Evento": dadosPiloto.evento,
-            "Data de Inscrição": new Date().toLocaleString(),
-            "Status de Pagamento": "Pago",
-            "Modo de Pagamento": modoPagamento
-          };
+    if (info.status === 'approved') {
+      const ref = info.external_reference;
+      const modoPagamento = info.payment_type_id;
+      const dadosPiloto = pilotosPendentes[ref];
 
-          const caminho = './inscricoes_confirmadas.xlsx';
-          let planilha = [];
-
-          if (fs.existsSync(caminho)) {
-            const wb = xlsx.readFile(caminho);
-            const ws = xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            planilha = [...ws, novaInscricao];
-          } else {
-            planilha = [novaInscricao];
-          }
-
-          const wbNovo = xlsx.utils.book_new();
-          const wsNovo = xlsx.utils.json_to_sheet(planilha);
-          xlsx.utils.book_append_sheet(wbNovo, wsNovo, 'Inscricoes');
-          xlsx.writeFile(wbNovo, caminho);
-
-          console.log("Inscrição salva com sucesso na planilha.");
-        }
+      if (!dadosPiloto) {
+        console.error("Dados do piloto não encontrados para o pagamento:", ref);
+        return res.sendStatus(404);
       }
+
+      const novaInscricao = {
+        "Nome do Preparador": dadosPiloto.preparador,
+        "Equipe": dadosPiloto.equipe,
+        "Moto": dadosPiloto.moto,
+        "Categoria": dadosPiloto.categoria,
+        "Evento": dadosPiloto.evento,
+        "Data de Inscrição": new Date().toLocaleString(),
+        "Status de Pagamento": "Pago",
+        "Modo de Pagamento": modoPagamento
+      };
+
+      const caminho = './inscricoes_confirmadas.xlsx';
+      let planilha = [];
+
+      if (fs.existsSync(caminho)) {
+        const wb = xlsx.readFile(caminho);
+        const ws = xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        planilha = [...ws, novaInscricao];
+      } else {
+        planilha = [novaInscricao];
+      }
+
+      const wbNovo = xlsx.utils.book_new();
+      const wsNovo = xlsx.utils.json_to_sheet(planilha);
+      xlsx.utils.book_append_sheet(wbNovo, wsNovo, 'Inscricoes');
+      xlsx.writeFile(wbNovo, caminho);
+
+      console.log("Inscrição salva com sucesso na planilha.");
     }
 
     res.sendStatus(200);
@@ -111,7 +113,8 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-const PORT = 3000;
+// Iniciar o servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
