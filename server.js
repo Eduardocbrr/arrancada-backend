@@ -23,10 +23,10 @@ let pilotosPendentes = {};
 
 // ROTA PARA CRIAR PAGAMENTO
 app.post('/criar-pagamento', async (req, res) => {
-  const { preparador, equipe, moto, categoria, evento } = req.body;
+  const { preparador, equipe, moto, categoria, evento, email } = req.body;
 
   const idUnico = Date.now().toString();
-  pilotosPendentes[idUnico] = { preparador, equipe, moto, categoria, evento };
+  pilotosPendentes[idUnico] = { preparador, equipe, moto, categoria, evento, email };
 
   const pagamento = {
     items: [
