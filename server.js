@@ -107,6 +107,10 @@ app.post('/webhook', async (req, res) => {
       xlsx.writeFile(wbNovo, caminho);
 
       console.log("Inscrição salva com sucesso na planilha.");
+      
+      const pdfPath = `./confirmacao_${ref}.pdf`;
+      await gerarPdfConfirmacao(dadosPiloto, pdfPath);
+      
       await enviarParaGoogleDrive();
     }
 
@@ -118,6 +122,42 @@ app.post('/webhook', async (req, res) => {
 });
 
 // Iniciar o servidor
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
+
+async function gerarPdfConfirmacao(dados, caminhoPDF) {
+  const { preparador, equipe, moto, categoria, evento } = dados;
+
+  // Conteúdo que vai no QR Code (pode ser um link ou os dados codificados)
+  const qrTexto = `Piloto: ${preparador} | Equipe: ${equipe} | Moto: ${moto} | Categoria: ${categoria} | Evento: ${evento}`;
+
+  const qrImageBuffer = await QRCode.toBuffer(qrTexto);
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument();
+    const stream = fs.createWriteStream(caminhoPDF);
+
+    doc.pipe(stream);
+
+    doc.fontSize(20).text('Confirmação de Inscrição', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12);
+    doc.text(`Preparador: ${preparador}`);
+    doc.text(`Equipe: ${equipe}`);
+    doc.text(`Moto: ${moto}`);
+    doc.text(`Categoria: ${categoria}`);
+    doc.text(`Evento: ${evento}`);
+    doc.moveDown();
+    doc.text('Apresente este QR Code na portaria do evento:', { align: 'left' });
+
+    doc.image(qrImageBuffer, { fit: [150, 150], align: 'center' });
+
+    doc.end();
+
+    stream.on('finish', () => resolve());
+    stream.on('error', (err) => reject(err));
+  });
+}
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
