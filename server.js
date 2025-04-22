@@ -1,3 +1,5 @@
+const { google } = require('googleapis');
+const path = require ('path');
 const express = require('express');
 const cors = require('cors');
 const mercadopago = require('mercadopago');
@@ -105,6 +107,7 @@ app.post('/webhook', async (req, res) => {
       xlsx.writeFile(wbNovo, caminho);
 
       console.log("Inscrição salva com sucesso na planilha.");
+      await enviarParaGoogleDrive();
     }
 
     res.sendStatus(200);
@@ -118,4 +121,34 @@ app.post('/webhook', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
-});
+});async function enviarParaGoogleDrive() {
+  const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+  const auth = new google.auth.GoogleAuth({
+    keyFile: path.join(__dirname, 'google-drive-key.json'),
+    scopes: SCOPES,
+  });
+
+  const drive = google.drive({ version: 'v3', auth });
+
+  const arquivo = {
+    name: 'inscricoes_confirmadas.xlsx',
+    parents: ['1gOfJfnxMw3BtrPngBXYZoagKunkAVxvJ'],
+  };
+
+  const arquivoMetadata = {
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    body: fs.createReadStream(path.join(__dirname, 'inscricoes_confirmadas.xlsx')),
+  };
+
+  try {
+    const resposta = await drive.files.create({
+      requestBody: arquivo,
+      media: arquivoMetadata,
+      fields: 'id',
+    });
+
+    console.log('Arquivo enviado para o Drive com sucesso. ID:', resposta.data.id);
+  } catch (erro) {
+    console.error('Erro ao enviar para o Google Drive:', erro.message);
+  }
+}
