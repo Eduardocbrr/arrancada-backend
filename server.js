@@ -42,6 +42,7 @@ app.post('/criar-pagamento', async (req, res) => {
     },
     auto_return: "approved",
     external_reference: idUnico
+    notification_url: "https://arrancada-backend.onrender.com/webhook"
   };
 
   try {
