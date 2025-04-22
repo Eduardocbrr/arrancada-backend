@@ -41,7 +41,7 @@ app.post('/criar-pagamento', async (req, res) => {
       pending: "https://arrancadaroraima.com.br/pendente"
     },
     auto_return: "approved",
-    external_reference: idUnico
+    external_reference: idUnico,
     notification_url: "https://arrancada-backend.onrender.com/webhook"
   };
 
