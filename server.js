@@ -110,6 +110,7 @@ app.post('/webhook', async (req, res) => {
       
       const pdfPath = `./confirmacao_${ref}.pdf`;
       await gerarPdfConfirmacao(dadosPiloto, pdfPath);
+      await enviarEmailComPDF(dadosPiloto, pdfPath);
       
       await enviarParaGoogleDrive();
     }
@@ -128,9 +129,7 @@ const QRCode = require('qrcode');
 async function gerarPdfConfirmacao(dados, caminhoPDF) {
   const { preparador, equipe, moto, categoria, evento } = dados;
 
-  // Conteúdo que vai no QR Code (pode ser um link ou os dados codificados)
   const qrTexto = `Piloto: ${preparador} | Equipe: ${equipe} | Moto: ${moto} | Categoria: ${categoria} | Evento: ${evento}`;
-
   const qrImageBuffer = await QRCode.toBuffer(qrTexto);
 
   return new Promise((resolve, reject) => {
@@ -156,12 +155,47 @@ async function gerarPdfConfirmacao(dados, caminhoPDF) {
 
     stream.on('finish', () => resolve());
     stream.on('error', (err) => reject(err));
+ });
+}
+    const nodemailer = require('nodemailer');
+    
+    async function enviarEmailComPDF(dados, caminhoPDF) {
+    const { preparador, equipe, moto, categoria, evento } = dados;
+
+    const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
   });
+
+  const mailOptions = {
+    from: `"Arrancada Roraima" <${process.env.EMAIL_USER}>`,
+    to: dados.email,
+    subject: 'Confirmação de Inscrição - Arrancada Roraima',
+    text: `Olá ${preparador}, sua inscrição foi confirmada para o evento "${evento}". Veja os detalhes no PDF em anexo.`,
+    attachments: [
+      {
+        filename: `confirmacao_${dados.moto}_${dados.categoria}.pdf`,
+        path: caminhoPDF
+      }
+    ]
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('E-mail enviado com sucesso para:', dados.email);
+  } catch (erro) {
+    console.error('Erro ao enviar o e-mail:', erro.message);
+  }
 }
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
-});async function enviarParaGoogleDrive() {
+});
+  
+  async function enviarParaGoogleDrive() {
   const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
   const auth = new google.auth.GoogleAuth({
     keyFile: path.join(__dirname, 'google-drive-key.json'),
