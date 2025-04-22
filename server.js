@@ -54,7 +54,13 @@ app.post('/criar-pagamento', async (req, res) => {
 // Webhook oficial do Mercado Pago
 app.post('/webhook', async (req, res) => {
   try {
-    const pagamento = req.body;
+    // lógica do webhook...
+    res.sendStatus(200);
+  } catch (e) {
+    console.error("Erro ao processar webhook:", e.message);
+    res.sendStatus(500);
+  }
+});
 
     if (pagamento?.data?.id) {
       const pagamentoDetalhes = await mercadopago.payment.findById(pagamento.data.id);
