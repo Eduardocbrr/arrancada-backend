@@ -17,20 +17,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Mercado Pago
 mercadopago.configure({
   access_token: process.env.MP_ACCESS_TOKEN
 });
 
-mongoose.connect('mongodb+srv://admin:Dudu32351217@cluster0.w5ruxx6.mongodb.net/arrancada?retryWrites=true&w=majority', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log("Conectado ao MongoDB com sucesso");
-}).catch(err => {
-  console.error("Erro ao conectar ao MongoDB:", err.message);
-});
+// MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Conectado ao MongoDB com sucesso'))
+  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
-const CadastroSchema = new mongoose.Schema({
+// Modelo para novos usuários
+const UsuarioSchema = new mongoose.Schema({
   nome: String,
   sobrenome: String,
   apelido: String,
@@ -38,9 +36,28 @@ const CadastroSchema = new mongoose.Schema({
   email: String,
   senha: String
 });
+const Usuario = mongoose.model('Usuario', UsuarioSchema);
 
-const Cadastro = mongoose.model('Cadastro', CadastroSchema);
+// Rota de cadastro
+app.post('/cadastrar', async (req, res) => {
+  const { nome, sobrenome, apelido, equipe, email, senha } = req.body;
 
+  try {
+    const existente = await Usuario.findOne({ email });
+    if (existente) {
+      return res.status(400).json({ mensagem: 'E-mail já cadastrado.' });
+    }
+
+    const novo = new Usuario({ nome, sobrenome, apelido, equipe, email, senha });
+    await novo.save();
+    res.status(201).json({ mensagem: 'Cadastro realizado com sucesso.' });
+  } catch (erro) {
+    console.error('Erro ao cadastrar:', erro);
+    res.status(500).json({ mensagem: 'Erro no servidor.' });
+  }
+});
+
+// Dados pendentes para PDF
 let pilotosPendentes = {};
 
 app.post('/criar-pagamento', async (req, res) => {
@@ -144,20 +161,7 @@ app.post('/login', (req, res) => {
   }
 });
 
-app.post('/cadastrar', async (req, res) => {
-  try {
-    const { nome, sobrenome, apelido, equipe, email, senha } = req.body;
-
-    const novoCadastro = new Cadastro({ nome, sobrenome, apelido, equipe, email, senha });
-    await novoCadastro.save();
-
-    res.json({ sucesso: true, mensagem: 'Cadastro realizado com sucesso!' });
-  } catch (erro) {
-    console.error('Erro ao salvar cadastro:', erro.message);
-    res.status(500).json({ sucesso: false, mensagem: 'Erro ao realizar cadastro.' });
-  }
-});
-
+// PDF + e-mail + Drive
 async function gerarPdfConfirmacao(dados, caminhoPDF) {
   const { preparador, equipe, moto, categoria, evento } = dados;
   const qrTexto = `Piloto: ${preparador} | Equipe: ${equipe} | Moto: ${moto} | Categoria: ${categoria} | Evento: ${evento}`;
