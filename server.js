@@ -1,11 +1,14 @@
-const { google } = require('googleapis');
-const path = require ('path');
 const express = require('express');
 const cors = require('cors');
 const mercadopago = require('mercadopago');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const xlsx = require('xlsx');
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
+const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+const path = require('path');
 
 dotenv.config();
 
@@ -13,18 +16,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configurar o Mercado Pago
 mercadopago.configure({
   access_token: process.env.MP_ACCESS_TOKEN
 });
 
-// Armazenamento temporário de inscrições antes do pagamento
 let pilotosPendentes = {};
 
-// ROTA PARA CRIAR PAGAMENTO
 app.post('/criar-pagamento', async (req, res) => {
   const { preparador, equipe, moto, categoria, evento, email } = req.body;
-
   const idUnico = Date.now().toString();
   pilotosPendentes[idUnico] = { preparador, equipe, moto, categoria, evento, email };
 
@@ -56,15 +55,10 @@ app.post('/criar-pagamento', async (req, res) => {
   }
 });
 
-// ROTA DE WEBHOOK PARA PROCESSAR PAGAMENTOS
 app.post('/webhook', async (req, res) => {
   try {
     const idPagamento = req.body?.data?.id;
-
-    if (!idPagamento) {
-      console.error("ID de pagamento não recebido.");
-      return res.sendStatus(400);
-    }
+    if (!idPagamento) return res.sendStatus(400);
 
     const resultado = await mercadopago.payment.findById(idPagamento);
     const info = resultado.response;
@@ -74,10 +68,7 @@ app.post('/webhook', async (req, res) => {
       const modoPagamento = info.payment_type_id;
       const dadosPiloto = pilotosPendentes[ref];
 
-      if (!dadosPiloto) {
-        console.error("Dados do piloto não encontrados para o pagamento:", ref);
-        return res.sendStatus(404);
-      }
+      if (!dadosPiloto) return res.sendStatus(404);
 
       const novaInscricao = {
         "Nome do Preparador": dadosPiloto.preparador,
@@ -106,15 +97,11 @@ app.post('/webhook', async (req, res) => {
       xlsx.utils.book_append_sheet(wbNovo, wsNovo, 'Inscricoes');
       xlsx.writeFile(wbNovo, caminho);
 
-      console.log("Inscrição salva com sucesso na planilha.");
-      
       const pdfPath = `./confirmacao_${ref}.pdf`;
       await gerarPdfConfirmacao(dadosPiloto, pdfPath);
       await enviarEmailComPDF(dadosPiloto, pdfPath);
-      
       await enviarParaGoogleDrive();
     }
-
     res.sendStatus(200);
   } catch (error) {
     console.error("Erro ao processar webhook:", error.message);
@@ -122,22 +109,29 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// Iniciar o servidor
-const PDFDocument = require('pdfkit');
-const QRCode = require('qrcode');
+app.post('/login', (req, res) => {
+  const { email, senha } = req.body;
+  const admin = {
+    email: "admin@arrancadaroraima.com.br",
+    senha: "admin123"
+  };
+
+  if (email === admin.email && senha === admin.senha) {
+    res.json({ autorizado: true });
+  } else {
+    res.json({ autorizado: false });
+  }
+});
 
 async function gerarPdfConfirmacao(dados, caminhoPDF) {
   const { preparador, equipe, moto, categoria, evento } = dados;
-
   const qrTexto = `Piloto: ${preparador} | Equipe: ${equipe} | Moto: ${moto} | Categoria: ${categoria} | Evento: ${evento}`;
   const qrImageBuffer = await QRCode.toBuffer(qrTexto);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument();
     const stream = fs.createWriteStream(caminhoPDF);
-
     doc.pipe(stream);
-
     doc.fontSize(20).text('Confirmação de Inscrição', { align: 'center' });
     doc.moveDown();
     doc.fontSize(12);
@@ -148,21 +142,16 @@ async function gerarPdfConfirmacao(dados, caminhoPDF) {
     doc.text(`Evento: ${evento}`);
     doc.moveDown();
     doc.text('Apresente este QR Code na portaria do evento:', { align: 'left' });
-
     doc.image(qrImageBuffer, { fit: [150, 150], align: 'center' });
-
     doc.end();
-
     stream.on('finish', () => resolve());
     stream.on('error', (err) => reject(err));
- });
+  });
 }
-    const nodemailer = require('nodemailer');
-    
-    async function enviarEmailComPDF(dados, caminhoPDF) {
-    const { preparador, equipe, moto, categoria, evento } = dados;
 
-    const transporter = nodemailer.createTransport({
+async function enviarEmailComPDF(dados, caminhoPDF) {
+  const { preparador, moto, categoria, evento, email } = dados;
+  const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -172,12 +161,12 @@ async function gerarPdfConfirmacao(dados, caminhoPDF) {
 
   const mailOptions = {
     from: `"Arrancada Roraima" <${process.env.EMAIL_USER}>`,
-    to: dados.email,
+    to: email,
     subject: 'Confirmação de Inscrição - Arrancada Roraima',
     text: `Olá ${preparador}, sua inscrição foi confirmada para o evento "${evento}". Veja os detalhes no PDF em anexo.`,
     attachments: [
       {
-        filename: `confirmacao_${dados.moto}_${dados.categoria}.pdf`,
+        filename: `confirmacao_${moto}_${categoria}.pdf`,
         path: caminhoPDF
       }
     ]
@@ -185,17 +174,13 @@ async function gerarPdfConfirmacao(dados, caminhoPDF) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('E-mail enviado com sucesso para:', dados.email);
+    console.log('E-mail enviado com sucesso para:', email);
   } catch (erro) {
     console.error('Erro ao enviar o e-mail:', erro.message);
   }
 }
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
-  
-  async function enviarParaGoogleDrive() {
+
+async function enviarParaGoogleDrive() {
   const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
   const auth = new google.auth.GoogleAuth({
     keyFile: path.join(__dirname, 'google-drive-key.json'),
@@ -220,9 +205,13 @@ app.listen(PORT, () => {
       media: arquivoMetadata,
       fields: 'id',
     });
-
     console.log('Arquivo enviado para o Drive com sucesso. ID:', resposta.data.id);
   } catch (erro) {
     console.error('Erro ao enviar para o Google Drive:', erro.message);
   }
 }
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
