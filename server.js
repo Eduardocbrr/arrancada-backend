@@ -9,6 +9,7 @@ const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const { google } = require('googleapis');
 const path = require('path');
+const mongoose = require('mongoose');
 
 dotenv.config();
 
@@ -19,6 +20,26 @@ app.use(express.json());
 mercadopago.configure({
   access_token: process.env.MP_ACCESS_TOKEN
 });
+
+mongoose.connect('mongodb+srv://admin:Dudu32351217@cluster0.w5ruxx6.mongodb.net/arrancada?retryWrites=true&w=majority', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log("Conectado ao MongoDB com sucesso");
+}).catch(err => {
+  console.error("Erro ao conectar ao MongoDB:", err.message);
+});
+
+const CadastroSchema = new mongoose.Schema({
+  nome: String,
+  sobrenome: String,
+  apelido: String,
+  equipe: String,
+  email: String,
+  senha: String
+});
+
+const Cadastro = mongoose.model('Cadastro', CadastroSchema);
 
 let pilotosPendentes = {};
 
@@ -120,6 +141,20 @@ app.post('/login', (req, res) => {
     res.json({ autorizado: true });
   } else {
     res.json({ autorizado: false });
+  }
+});
+
+app.post('/cadastrar', async (req, res) => {
+  try {
+    const { nome, sobrenome, apelido, equipe, email, senha } = req.body;
+
+    const novoCadastro = new Cadastro({ nome, sobrenome, apelido, equipe, email, senha });
+    await novoCadastro.save();
+
+    res.json({ sucesso: true, mensagem: 'Cadastro realizado com sucesso!' });
+  } catch (erro) {
+    console.error('Erro ao salvar cadastro:', erro.message);
+    res.status(500).json({ sucesso: false, mensagem: 'Erro ao realizar cadastro.' });
   }
 });
 
