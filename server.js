@@ -178,11 +178,11 @@ app.post('/login', (req, res) => {
     return res.json({ autorizado: true, tipo: "admin" });
   }
 
-  // Verifica se é piloto
+  // Verifica se é piloto (com validação adicional para e-mail e senha)
   const pilotosValidos = [
     { email: "piloto1@arrancadaroraima.com.br", senha: "piloto123", tipo: "piloto" },
     { email: "piloto2@arrancadaroraima.com.br", senha: "piloto123", tipo: "piloto" },
-    // Adicione mais pilotos se necessário
+    // Adicione mais pilotos aqui se necessário
   ];
 
   const piloto = pilotosValidos.find(p => p.email === email && p.senha === senha);
