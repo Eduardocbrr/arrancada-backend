@@ -42,11 +42,13 @@
   </main>
 
   <script>
-    fetch("https://arrancada-backend.onrender.com/api/eventos")
+    fetch("http://localhost:3000/api/eventos")
       .then(res => res.json())
       .then(eventos => {
         const container = document.getElementById("listaEventos");
         container.innerHTML = ""; // Limpar
+
+        // Exibir os eventos carregados
         eventos.forEach(evento => {
           const div = document.createElement("div");
           div.className = "evento-item";
