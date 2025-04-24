@@ -1,0 +1,230 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+/* Cabeçalho com logo e menu */
+header.logo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #111;
+  padding: 10px 30px;
+  flex-wrap: wrap;
+}
+
+header.logo img {
+  height: 60px;
+}
+
+nav.menu {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.menu-item {
+  text-decoration: none;
+  color: white;
+  font-weight: 500;
+  position: relative;
+  padding: 8px 15px;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover::after,
+.menu-item.ativo::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(to right, #ffcc00, #ff6600);
+  border-radius: 2px;
+}
+
+/* Banner */
+.banner {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.banner-imagem {
+  width: 100%;
+  object-fit: cover;
+  height: auto;
+}
+
+/* Conteúdo geral */
+main.conteudo {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Estilo dos botões */
+.botao-evento,
+.botao-enviar,
+.botao-whatsapp {
+  background: linear-gradient(to bottom, #2c2c2c, #111);
+  color: #fff;
+  font-weight: bold;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  text-transform: uppercase;
+}
+
+.botao-evento:hover,
+.botao-enviar:hover,
+.botao-whatsapp:hover {
+  background: linear-gradient(to bottom, #ffffff, #ff6600);
+  color: #000;
+}
+
+/* Lista de eventos lado a lado */
+.eventos-lista h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.eventos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.evento {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  width: 300px;
+  text-align: center;
+}
+
+.evento h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.evento p {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+/* Agenda de eventos na página inicial */
+.agenda-container {
+  background-color: #e0e0e0;
+  padding: 15px 30px;
+  margin-top: 40px;
+}
+
+.agenda-titulo {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.agenda-lista {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.agenda-evento {
+  padding: 10px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.agenda-evento:last-child {
+  border-bottom: none;
+}
+
+.agenda-evento h3 {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.agenda-evento p {
+  font-size: 14px;
+  margin: 2px 0;
+}
+
+/* Página de contato */
+.contato {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  align-items: flex-start;
+  margin-top: 40px;
+}
+
+.contato-texto {
+  flex: 1 1 300px;
+}
+
+.contato-texto h1 {
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.contato-texto p {
+  margin-bottom: 10px;
+}
+
+.contato-form {
+  flex: 1 1 300px;
+}
+
+.contato-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contato-form input,
+.contato-form select,
+.contato-form textarea {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  width: 100%;
+}
+
+.contato-form textarea {
+  resize: vertical;
+}
+
+@media screen and (max-width: 768px) {
+  nav.menu {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 10px;
+  }
+
+  .eventos-lista {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .contato {
+    flex-direction: column;
+  }
+}

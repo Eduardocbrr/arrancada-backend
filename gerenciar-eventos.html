@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gerenciar Eventos</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .titulo-pagina {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .formulario-evento,
+    .lista-eventos {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+    }
+
+    .formulario-evento input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .formulario-evento button {
+      padding: 12px 25px;
+      background: linear-gradient(to bottom, #2c2c2c, #111);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .formulario-evento button:hover {
+      background: linear-gradient(to bottom, #ffffff, #ff6600);
+      color: black;
+    }
+
+    .evento-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .evento-item span {
+      font-size: 16px;
+    }
+
+    .evento-item button {
+      margin-left: 10px;
+      padding: 6px 12px;
+      background: #a00;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .evento-item button:hover {
+      background: #ff3300;
+    }
+  </style>
+</head>
+<body>
+  <header class="logo">
+    <a href="index.html">
+      <img src="ChatGPT Image 23 de abr. de 2025, 08_35_58.png" alt="Arrancada Roraima" />
+    </a>
+    <nav class="menu">
+      <a href="index.html" class="menu-item">Home</a>
+      <a href="eventos.html" class="menu-item">Eventos</a>
+      <a href="contato.html" class="menu-item">Contato</a>
+      <a href="cadastro.html" class="menu-item">Inscrição de Piloto</a>
+      <a href="login.html" class="menu-item">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="titulo-pagina">Gerenciar Eventos</div>
+
+    <div class="formulario-evento">
+      <h3>Adicionar Novo Evento</h3>
+      <input type="text" id="nomeEvento" placeholder="Nome do Evento" required>
+      <input type="text" id="localEvento" placeholder="Local do Evento" required>
+      <input type="date" id="dataEvento" required>
+      <button onclick="adicionarEvento()">Adicionar Evento</button>
+    </div>
+
+    <div class="lista-eventos">
+      <h3>Eventos Cadastrados</h3>
+      <div id="eventosCadastrados"></div>
+    </div>
+  </main>
+
+  <script>
+    let eventos = [];
+
+    function adicionarEvento() {
+      const nome = document.getElementById('nomeEvento').value;
+      const local = document.getElementById('localEvento').value;
+      const data = document.getElementById('dataEvento').value;
+
+      if (!nome || !local || !data) return alert("Preencha todos os campos");
+
+      const novoEvento = { nome, local, data };
+      eventos.push(novoEvento);
+      document.getElementById('nomeEvento').value = '';
+      document.getElementById('localEvento').value = '';
+      document.getElementById('dataEvento').value = '';
+      renderizarEventos();
+    }
+
+    function removerEvento(index) {
+      eventos.splice(index, 1);
+      renderizarEventos();
+    }
+
+    function renderizarEventos() {
+      const container = document.getElementById('eventosCadastrados');
+      container.innerHTML = '';
+
+      eventos.forEach((evento, index) => {
+        const div = document.createElement('div');
+        div.className = 'evento-item';
+        div.innerHTML = `
+          <span>${evento.nome} - ${evento.local} - ${evento.data}</span>
+          <button onclick="removerEvento(${index})">Excluir</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

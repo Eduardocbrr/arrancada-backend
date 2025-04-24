@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contato - Arrancada Roraima</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="logo">
+    <a href="index.html">
+      <img src="logo.png" alt="Arrancada Roraima" />
+    </a>
+    <nav class="menu">
+      <a href="index.html" class="menu-item">Home</a>
+      <a href="eventos.html" class="menu-item">Eventos</a>
+      <a href="contato.html" class="menu-item ativo">Contato</a>
+      <a href="cadastro.html" class="menu-item">Inscrição de Piloto</a>
+      <a href="https://lets.events/e/festival-de-arrancada-em-sao-luiz-do-anaua?t=394fb76b-018c-4132-a610-d8703ee8e291" target="_blank" class="menu-item">Ingressos Aqui</a>
+      <a href="login.html" class="menu-item">Login</a>
+    </nav>
+  </header>
+
+  <main class="conteudo">
+    <section class="banner">
+      <!-- Espaço para banner -->
+      <img src="https://www.velopark.com.br/velopark/upload/site_banner/web/g/136.png?v1" alt="Banner do Evento" class="banner-imagem">
+    </section>
+
+    <section class="contato">
+      <div class="contato-texto">
+        <h1>Entre em contato conosco!</h1>
+        <p>Dúvidas, sugestões ou elogios? Utilize os campos ao lado para entrar em contato conosco.</p>
+        <p>Ou fale conosco pelo WhatsApp:</p>
+        <a href="https://wa.me/5595984054891" target="_blank" class="botao-whatsapp">WhatsApp</a>
+      </div>
+
+      <div class="contato-form">
+        <form>
+          <input type="text" placeholder="Seu nome" required>
+          <input type="email" placeholder="Seu e-mail" required>
+          <input type="tel" placeholder="Telefone" required>
+
+          <select id="estado" required>
+            <option value="">Selecione o estado</option>
+            <!-- Estados serão carregados dinamicamente -->
+          </select>
+
+          <select id="cidade" required disabled>
+            <option value="">Selecione a cidade</option>
+            <!-- Cidades serão carregadas dinamicamente -->
+          </select>
+
+          <textarea placeholder="Digite sua mensagem" rows="5" required></textarea>
+
+          <button type="submit" class="botao-enviar">Enviar</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Carregar estados e cidades dinamicamente
+    document.addEventListener('DOMContentLoaded', () => {
+      const estadoSelect = document.getElementById('estado');
+      const cidadeSelect = document.getElementById('cidade');
+
+      // Carregar estados
+      fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome')
+        .then(response => response.json())
+        .then(estados => {
+          estados.forEach(estado => {
+            const option = document.createElement('option');
+            option.value = estado.id;
+            option.textContent = estado.nome;
+            estadoSelect.appendChild(option);
+          });
+        });
+
+      // Carregar cidades ao selecionar um estado
+      estadoSelect.addEventListener('change', () => {
+        const estadoId = estadoSelect.value;
+        cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+        cidadeSelect.disabled = true;
+
+        if (estadoId) {
+          fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoId}/municipios`)
+            .then(response => response.json())
+            .then(cidades => {
+              cidades.forEach(cidade => {
+                const option = document.createElement('option');
+                option.value = cidade.nome;
+                option.textContent = cidade.nome;
+                cidadeSelect.appendChild(option);
+              });
+              cidadeSelect.disabled = false;
+            });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
