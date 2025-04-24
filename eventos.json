@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "nome": "Campeonato Estadual",
+    "data": "2024-06-15",
+    "local": "AABB",
+    "cidade": "Boa Vista - RR"
+  },
+  {
+    "id": "2",
+    "nome": "Desafio Noturno",
+    "data": "2024-07-20",
+    "local": "Reta do Aeroporto",
+    "cidade": "São Luiz do Anauá - RR"
+  },
+  {
+    "id": "3",
+    "nome": "Festival de Arrancada",
+    "data": "2024-09-01",
+    "local": "Parque de Exposições",
+    "cidade": "Boa Vista - RR"
+  }
+]

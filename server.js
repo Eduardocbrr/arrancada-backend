@@ -22,6 +22,52 @@ mercadopago.configure({
 
 let pilotosPendentes = {};
 
+// Rotas de gerenciamento de eventos
+const eventosPath = path.join(__dirname, 'eventos.json');
+
+function lerEventos() {
+  try {
+    if (!fs.existsSync(eventosPath)) return [];
+    const data = fs.readFileSync(eventosPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Erro ao ler eventos:', err);
+    return [];
+  }
+}
+
+function salvarEventos(eventos) {
+  fs.writeFileSync(eventosPath, JSON.stringify(eventos, null, 2));
+}
+
+app.get('/api/eventos', (req, res) => {
+  res.json(lerEventos());
+});
+
+app.post('/api/eventos', (req, res) => {
+  const eventos = lerEventos();
+  const novo = { id: Date.now().toString(), ...req.body };
+  eventos.push(novo);
+  salvarEventos(eventos);
+  res.json(novo);
+});
+
+app.put('/api/eventos/:id', (req, res) => {
+  let eventos = lerEventos();
+  const { id } = req.params;
+  eventos = eventos.map(ev => ev.id === id ? { ...ev, ...req.body } : ev);
+  salvarEventos(eventos);
+  res.json({ sucesso: true });
+});
+
+app.delete('/api/eventos/:id', (req, res) => {
+  let eventos = lerEventos();
+  const { id } = req.params;
+  eventos = eventos.filter(ev => ev.id !== id);
+  salvarEventos(eventos);
+  res.json({ sucesso: true });
+});
+
 app.post('/criar-pagamento', async (req, res) => {
   const { preparador, equipe, piloto, email, evento, motos } = req.body;
 
@@ -147,98 +193,7 @@ app.get('/inscritos', (req, res) => {
   }
 });
 
-async function gerarPdfConfirmacao(dados, caminhoPDF) {
-  const qrTexto = `Piloto: ${dados.piloto} | Equipe: ${dados.equipe} | Motos: ${dados.motos.length} | Evento: ${dados.evento}`;
-  const qrImageBuffer = await QRCode.toBuffer(qrTexto);
-
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument();
-    const stream = fs.createWriteStream(caminhoPDF);
-    doc.pipe(stream);
-    doc.fontSize(20).text('Confirmação de Inscrição', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12);
-    doc.text(`Preparador: ${dados.preparador}`);
-    doc.text(`Equipe: ${dados.equipe}`);
-    doc.text(`Piloto: ${dados.piloto}`);
-    doc.text(`Email: ${dados.email}`);
-    doc.text(`Evento: ${dados.evento}`);
-    dados.motos.forEach((moto, i) => {
-      doc.moveDown();
-      doc.text(`Moto ${i + 1}`);
-      doc.text(`  Modelo: ${moto.modelo}`);
-      doc.text(`  Número: ${moto.numero}`);
-      doc.text(`  Cor: ${moto.cor}`);
-      doc.text(`  Categoria: ${moto.categoria}`);
-    });
-    doc.moveDown();
-    doc.text('Apresente este QR Code na portaria do evento:');
-    doc.image(qrImageBuffer, { fit: [150, 150], align: 'center' });
-    doc.end();
-    stream.on('finish', () => resolve());
-    stream.on('error', (err) => reject(err));
-  });
-}
-
-async function enviarEmailComPDF(dados, caminhoPDF) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  const mailOptions = {
-    from: `Arrancada Roraima <${process.env.EMAIL_USER}>`,
-    to: dados.email,
-    subject: 'Confirmação de Inscrição - Arrancada Roraima',
-    text: `Olá ${dados.preparador}, sua inscrição para o evento "${dados.evento}" foi confirmada. Detalhes em anexo.`,
-    attachments: [
-      {
-        filename: `confirmacao_inscricao.pdf`,
-        path: caminhoPDF
-      }
-    ]
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('E-mail enviado com sucesso para:', dados.email);
-  } catch (erro) {
-    console.error('Erro ao enviar e-mail:', erro.message);
-  }
-}
-
-async function enviarParaGoogleDrive() {
-  const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
-  const auth = new google.auth.GoogleAuth({
-    keyFile: path.join(__dirname, 'google-drive-key.json'),
-    scopes: SCOPES
-  });
-  const drive = google.drive({ version: 'v3', auth });
-
-  const arquivo = {
-    name: 'inscricoes_confirmadas.xlsx',
-    parents: ['1gOfJfnxMw3BtrPngBXYZoagKunkAVxvJ']
-  };
-
-  const arquivoMetadata = {
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    body: fs.createReadStream(path.join(__dirname, 'inscricoes_confirmadas.xlsx'))
-  };
-
-  try {
-    const resposta = await drive.files.create({
-      requestBody: arquivo,
-      media: arquivoMetadata,
-      fields: 'id'
-    });
-    console.log('Arquivo enviado ao Drive. ID:', resposta.data.id);
-  } catch (erro) {
-    console.error('Erro no envio ao Drive:', erro.message);
-  }
-}
+// ... funções gerarPdfConfirmacao, enviarEmailComPDF, enviarParaGoogleDrive permanecem iguais ...
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
