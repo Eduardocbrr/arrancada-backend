@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); 
 const cors = require('cors');
 const mercadopago = require('mercadopago');
 const dotenv = require('dotenv');
@@ -22,7 +22,7 @@ mercadopago.configure({
 
 let pilotosPendentes = {};
 
-// Rotas de gerenciamento de eventos
+// Rotas de gerenciamento de eventos com persistência
 const eventosPath = path.join(__dirname, 'eventos.json');
 
 function lerEventos() {
@@ -192,8 +192,6 @@ app.get('/inscritos', (req, res) => {
     res.status(500).json({ erro: 'Erro ao ler arquivo de inscritos' });
   }
 });
-
-// ... funções gerarPdfConfirmacao, enviarEmailComPDF, enviarParaGoogleDrive permanecem iguais ...
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
