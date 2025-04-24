@@ -116,6 +116,37 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+app.post('/login', (req, res) => {
+  const { email, senha } = req.body;
+
+  if (email === "admin@arrancadaroraima.com.br" && senha === "admin123") {
+    return res.json({ autorizado: true, tipo: "admin" });
+  }
+
+  if (email && senha) {
+    return res.json({ autorizado: true, tipo: "piloto" });
+  }
+
+  res.json({ autorizado: false });
+});
+
+app.get('/inscritos', (req, res) => {
+  const caminho = './inscricoes_confirmadas.xlsx';
+
+  if (!fs.existsSync(caminho)) {
+    return res.json([]);
+  }
+
+  try {
+    const wb = xlsx.readFile(caminho);
+    const ws = xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    res.json(ws);
+  } catch (erro) {
+    console.error('Erro ao ler inscritos:', erro.message);
+    res.status(500).json({ erro: 'Erro ao ler arquivo de inscritos' });
+  }
+});
+
 async function gerarPdfConfirmacao(dados, caminhoPDF) {
   const qrTexto = `Piloto: ${dados.piloto} | Equipe: ${dados.equipe} | Motos: ${dados.motos.length} | Evento: ${dados.evento}`;
   const qrImageBuffer = await QRCode.toBuffer(qrTexto);
